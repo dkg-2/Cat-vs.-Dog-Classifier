@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 
 # Load the trained model
-model = tf.keras.models.load_model("model.keras")  # Change to "model.keras" if needed
+model = tf.keras.models.load_model("model.keras")  # Ensure model is in the Space
 
 # Function to preprocess the input image
 def preprocess_image(image):
@@ -18,21 +18,36 @@ def predict(image):
     image = preprocess_image(image)
     prediction = model.predict(image)
 
-    # If using binary classification (sigmoid activation)
-    if prediction.shape[-1] == 1:
-        label = "Dog" if prediction[0][0] > 0.5 else "Cat"
-        confidence = prediction[0][0] if prediction[0][0] > 0.5 else 1 - prediction[0][0]
-    else:  # If using softmax for categorical classification
-        label = "Dog" if np.argmax(prediction) == 1 else "Cat"
+    if prediction.shape[-1] == 1:  # Binary classification
+        confidence = prediction[0][0]
+        label = "Dog" if confidence > 0.5 else "Cat"
+        confidence = confidence if confidence > 0.5 else 1 - confidence
+    else:
         confidence = np.max(prediction)
-    
-    return f"Prediction: {label} ({confidence*100:.2f}%)"
+        label = "Dog" if np.argmax(prediction) == 1 else "Cat"
 
-# Create and launch the Gradio interface
-iface = gr.Interface(
-    fn=predict, 
-    inputs=gr.Image(type="pil"), 
-    outputs="text"
-)
+    return label, f"Confidence: {confidence*100:.2f}%"
 
-iface.launch(debug=True)  # Launch the interface
+# Create a detailed Gradio interface
+with gr.Blocks() as demo:
+    gr.Markdown("# 🐶🐱 Cat vs. Dog Classifier")
+    gr.Markdown("Upload an image, and our AI model will predict whether it's a cat or a dog! 🖼️")
+
+    with gr.Row():
+        image_input = gr.Image(type="pil", label="Upload an Image")
+        image_output = gr.Image(label="Uploaded Image", interactive=False)
+
+    with gr.Row():
+        prediction_text = gr.Textbox(label="Prediction", interactive=False)
+        confidence_text = gr.Textbox(label="Confidence", interactive=False)
+
+    submit_btn = gr.Button("Predict 🧠")
+
+    def wrapper(image):
+        label, confidence = predict(image)
+        return image, label, confidence
+
+    submit_btn.click(wrapper, inputs=image_input, outputs=[image_output, prediction_text, confidence_text])
+
+# Launch the interface
+demo.launch()

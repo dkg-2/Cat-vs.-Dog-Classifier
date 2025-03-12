@@ -3,22 +3,22 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-# Load the trained model
-model = tf.keras.models.load_model("model.keras")  # Ensure model is in the Space
 
-# Function to preprocess the input image
+model = tf.keras.models.load_model("model.keras") 
+
+
 def preprocess_image(image):
-    image = image.resize((150, 150))  # Resize to match model input size
-    image = np.array(image) / 255.0   # Normalize pixel values
-    image = np.expand_dims(image, axis=0)  # Add batch dimension
+    image = image.resize((150, 150))  
+    image = np.array(image) / 255.0   
+    image = np.expand_dims(image, axis=0)  
     return image
 
-# Function to make predictions
+
 def predict(image):
     image = preprocess_image(image)
     prediction = model.predict(image)
 
-    if prediction.shape[-1] == 1:  # Binary classification
+    if prediction.shape[-1] == 1: 
         confidence = prediction[0][0]
         label = "Dog" if confidence > 0.5 else "Cat"
         confidence = confidence if confidence > 0.5 else 1 - confidence
@@ -28,7 +28,7 @@ def predict(image):
 
     return label, f"Confidence: {confidence*100:.2f}%"
 
-# Create a detailed Gradio interface
+
 with gr.Blocks() as demo:
     gr.Markdown("# 🐶🐱 Cat vs. Dog Classifier")
     gr.Markdown("Upload an image, and our AI model will predict whether it's a cat or a dog! 🖼️")
@@ -49,5 +49,5 @@ with gr.Blocks() as demo:
 
     submit_btn.click(wrapper, inputs=image_input, outputs=[image_output, prediction_text, confidence_text])
 
-# Launch the interface
+
 demo.launch()
